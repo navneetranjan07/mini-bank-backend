@@ -30,7 +30,7 @@ public class UserService {
     // ================= REGISTER USER =================
     public User register(String name, String email, String password) {
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.emailExists(email)) {
             throw new BadRequestException("Email already exists");
         }
 
