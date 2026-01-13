@@ -17,7 +17,15 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
-    // ================= GET ACCOUNT =================
+    // ================= CUSTOMER: MY ACCOUNT =================
+    public Account getMyAccount(String email) {
+
+        return accountRepository.findByUserEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Account not found"));
+    }
+
+    // ================= ADMIN / INTERNAL =================
     public Account getAccount(String accountNumber) {
 
         return accountRepository.findByAccountNumber(accountNumber)

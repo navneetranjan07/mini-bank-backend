@@ -1,9 +1,9 @@
 package com.example.demo.controller;
 
-
 import com.example.demo.dto.AccountResponseDTO;
 import com.example.demo.entity.Account;
 import com.example.demo.service.AccountService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +17,21 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    // GET ACCOUNT BY ACCOUNT NUMBER
+    // ================= CUSTOMER: MY ACCOUNT =================
+    @GetMapping("/me")
+    public AccountResponseDTO getMyAccount(Authentication authentication) {
+
+        String email = authentication.getName(); // 🔐 JWT principal
+
+        Account account = accountService.getMyAccount(email);
+
+        return AccountResponseDTO.builder()
+                .accountNumber(account.getAccountNumber())
+                .balance(account.getBalance())
+                .build();
+    }
+
+    // ================= ADMIN / INTERNAL =================
     @GetMapping("/{accountNumber}")
     public AccountResponseDTO getAccount(@PathVariable String accountNumber) {
 
@@ -28,5 +42,4 @@ public class AccountController {
                 .balance(account.getBalance())
                 .build();
     }
-
 }

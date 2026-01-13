@@ -22,27 +22,22 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors(cors -> {})   // 🔥 THIS IS MANDATORY
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // ADMIN ONLY
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // CUSTOMER ONLY
-                        .requestMatchers("/api/account/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/transaction/**").hasRole("CUSTOMER")
-
-                        // ANY OTHER REQUEST
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/account/**").hasAuthority("ROLE_CUSTOMER")
+                        .requestMatchers("/api/transaction/**").hasAuthority("ROLE_CUSTOMER")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     // OPTIONAL (useful later)
     @Bean

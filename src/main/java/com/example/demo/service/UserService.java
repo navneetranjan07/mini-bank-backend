@@ -7,7 +7,7 @@ import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,12 +19,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder; // ✅ injected
 
     public UserService(UserRepository userRepository,
-                       AccountRepository accountRepository) {
+                       AccountRepository accountRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ================= REGISTER USER =================
@@ -37,7 +39,7 @@ public class UserService {
         User user = User.builder()
                 .name(name)
                 .email(email)
-                .password(passwordEncoder.encode(password))
+                .password(passwordEncoder.encode(password)) // ✅ correct
                 .role(Role.ROLE_CUSTOMER)
                 .build();
 
@@ -63,6 +65,7 @@ public class UserService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Invalid email or password"));
 
+        // 🔥 THIS IS NOW CONSISTENT WITH ADMIN SEEDER
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ResourceNotFoundException("Invalid email or password");
         }

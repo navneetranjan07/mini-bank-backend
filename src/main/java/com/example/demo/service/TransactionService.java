@@ -72,9 +72,44 @@ public class TransactionService {
 
         validateAmount(amount);
 
-        withdraw(fromAccount, amount);
-        deposit(toAccount, amount);
+        Account sender = accountService.getAccount(fromAccount);
+        Account receiver = accountService.getAccount(toAccount);
+
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new BadRequestException("Insufficient balance");
+        }
+
+        // 1️⃣ Update balances
+        accountService.updateBalance(
+                sender,
+                sender.getBalance().subtract(amount)
+        );
+
+        accountService.updateBalance(
+                receiver,
+                receiver.getBalance().add(amount)
+        );
+
+        // 2️⃣ Sender transaction (TRANSFER OUT)
+        Transaction debitTxn = Transaction.builder()
+                .type("TRANSFER_OUT")
+                .amount(amount)
+                .transactionDate(LocalDateTime.now())
+                .account(sender)
+                .build();
+
+        // 3️⃣ Receiver transaction (TRANSFER IN / CREDIT)
+        Transaction creditTxn = Transaction.builder()
+                .type("TRANSFER_IN")
+                .amount(amount)
+                .transactionDate(LocalDateTime.now())
+                .account(receiver)
+                .build();
+
+        transactionRepository.save(debitTxn);
+        transactionRepository.save(creditTxn);
     }
+
 
     // ================= VALIDATION =================
     private void validateAmount(BigDecimal amount) {

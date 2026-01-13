@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 
+import com.example.demo.dto.AccountResponseDTO;
+import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
@@ -30,21 +32,30 @@ public class AdminController {
 
     // GET ALL USERS
     @GetMapping("/users")
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(u -> UserResponseDTO.builder()
+                        .id(u.getId())
+                        .name(u.getName())
+                        .email(u.getEmail())
+                        .role(u.getRole())
+                        .build())
+                .toList();
     }
+
 
     // GET ALL ACCOUNTS
     @GetMapping("/accounts")
-    public List<Account> getAllAccounts() {
-        return accountRepository.findAll();
+    public List<AccountResponseDTO> getAllAccounts() {
+        return accountRepository.findAll().stream()
+                .map(a -> AccountResponseDTO.builder()
+                        .accountNumber(a.getAccountNumber())
+                        .balance(a.getBalance())
+                        .build())
+                .toList();
     }
 
-    // GET ALL TRANSACTIONS
-    @GetMapping("/transactions")
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
-    }
+
 
     // DELETE USER
     @DeleteMapping("/user/{id}")

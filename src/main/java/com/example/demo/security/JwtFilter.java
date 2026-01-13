@@ -57,13 +57,17 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-            String email = jwtUtil.getEmail(token);
+            if (jwtUtil.isTokenExpired(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
+            String email = jwtUtil.getEmail(token);
             User user = userRepository.findByEmail(email).orElse(null);
 
-            if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (user != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // ROLE_ prefix is REQUIRED by Spring Security
                 SimpleGrantedAuthority authority =
                         new SimpleGrantedAuthority(user.getRole().name());
 
@@ -74,15 +78,15 @@ public class JwtFilter extends OncePerRequestFilter {
                                 List.of(authority)
                         );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
             }
 
         } catch (Exception e) {
-            // ❌ Invalid / expired / malformed token
-            // Do NOT crash the app
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
+
 
         filterChain.doFilter(request, response);
     }
