@@ -2,9 +2,11 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
+import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,11 +18,14 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
+    private final PasswordEncoder passwordEncoder;
+
 
     public TransactionService(TransactionRepository transactionRepository,
-                              AccountService accountService) {
+                              AccountService accountService, PasswordEncoder passwordEncoder) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ================= DEPOSIT =================
@@ -44,71 +49,79 @@ public class TransactionService {
     }
 
     // ================= WITHDRAW =================
-    public void withdraw(String accountNumber, BigDecimal amount) {
+    public void withdraw(String accountNumber,
+                         BigDecimal amount,
+                         String pin) {
 
         validateAmount(amount);
 
         Account account = accountService.getAccount(accountNumber);
+        validatePin(account, pin);
 
         if (account.getBalance().compareTo(amount) < 0) {
             throw new BadRequestException("Insufficient balance");
         }
 
-        BigDecimal updatedBalance = account.getBalance().subtract(amount);
-        accountService.updateBalance(account, updatedBalance);
+        accountService.updateBalance(
+                account,
+                account.getBalance().subtract(amount)
+        );
 
-        Transaction txn = Transaction.builder()
-                .type("WITHDRAW")
-                .amount(amount)
-                .transactionDate(LocalDateTime.now())
-                .account(account)
-                .build();
-
-        transactionRepository.save(txn);
+        transactionRepository.save(
+                Transaction.builder()
+                        .type("WITHDRAW")
+                        .amount(amount)
+                        .transactionDate(LocalDateTime.now())
+                        .account(account)
+                        .build()
+        );
     }
 
+
     // ================= TRANSFER =================
-    public void transfer(String fromAccount, String toAccount, BigDecimal amount) {
+    public void transfer(String fromAccount,
+                         String toAccount,
+                         BigDecimal amount,
+                         String pin) {
 
         validateAmount(amount);
 
         Account sender = accountService.getAccount(fromAccount);
         Account receiver = accountService.getAccount(toAccount);
 
+        validatePin(sender, pin);
+
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new BadRequestException("Insufficient balance");
         }
 
-        // 1️⃣ Update balances
         accountService.updateBalance(
-                sender,
-                sender.getBalance().subtract(amount)
+                sender, sender.getBalance().subtract(amount)
         );
 
         accountService.updateBalance(
-                receiver,
-                receiver.getBalance().add(amount)
+                receiver, receiver.getBalance().add(amount)
         );
 
-        // 2️⃣ Sender transaction (TRANSFER OUT)
-        Transaction debitTxn = Transaction.builder()
-                .type("TRANSFER_OUT")
-                .amount(amount)
-                .transactionDate(LocalDateTime.now())
-                .account(sender)
-                .build();
+        transactionRepository.save(
+                Transaction.builder()
+                        .type("TRANSFER_OUT")
+                        .amount(amount)
+                        .transactionDate(LocalDateTime.now())
+                        .account(sender)
+                        .build()
+        );
 
-        // 3️⃣ Receiver transaction (TRANSFER IN / CREDIT)
-        Transaction creditTxn = Transaction.builder()
-                .type("TRANSFER_IN")
-                .amount(amount)
-                .transactionDate(LocalDateTime.now())
-                .account(receiver)
-                .build();
-
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
+        transactionRepository.save(
+                Transaction.builder()
+                        .type("TRANSFER_IN")
+                        .amount(amount)
+                        .transactionDate(LocalDateTime.now())
+                        .account(receiver)
+                        .build()
+        );
     }
+
 
 
     // ================= VALIDATION =================
@@ -116,6 +129,17 @@ public class TransactionService {
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Amount must be greater than zero");
+        }
+    }
+
+    private void validatePin(Account account, String rawPin){
+        User user = account.getUser();
+        if(user.getTransactionPin() == null){
+            throw new BadRequestException("Transaction PIN not set");
+        }
+
+        if(!passwordEncoder.matches(rawPin, user.getTransactionPin())){
+            throw new BadRequestException("Invalid transaction PIN");
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.TransactionPinRequest;
 import com.example.demo.dto.TransactionResponseDTO;
 import com.example.demo.entity.Account;
 import com.example.demo.repository.TransactionRepository;
@@ -43,24 +44,28 @@ public class TransactionController {
 
     // ================= WITHDRAW =================
     @PostMapping("/withdraw")
-    public String withdraw(@RequestBody Map<String, String> req) {
+    public String withdraw(@RequestBody TransactionPinRequest req) {
         transactionService.withdraw(
-                req.get("accountNumber"),
-                new BigDecimal(req.get("amount"))
+                req.getAccountNumber(),
+                new BigDecimal(req.getAmount()),
+                req.getPin()
         );
         return "Withdraw successful";
     }
 
+
     // ================= TRANSFER =================
     @PostMapping("/transfer")
-    public String transfer(@RequestBody Map<String, String> req) {
+    public String transfer(@RequestBody TransactionPinRequest req) {
         transactionService.transfer(
-                req.get("fromAccount"),
-                req.get("toAccount"),
-                new BigDecimal(req.get("amount"))
+                req.getAccountNumber(),
+                req.getToAccount(),
+                new BigDecimal(req.getAmount()),
+                req.getPin()
         );
         return "Transfer successful";
     }
+
 
     // ================= USER TRANSACTION HISTORY =================
     @GetMapping("/my")

@@ -37,4 +37,8 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private Account account;
+
+    @Column(name = "transaction_pin")
+    @JsonIgnore
+    private String transactionPin;
 }
