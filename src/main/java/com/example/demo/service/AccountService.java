@@ -17,7 +17,7 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
-    // ================= CUSTOMER: MY ACCOUNT =================
+
     public Account getMyAccount(String email) {
 
         return accountRepository.findByUserEmail(email)
@@ -25,7 +25,6 @@ public class AccountService {
                         new ResourceNotFoundException("Account not found"));
     }
 
-    // ================= ADMIN / INTERNAL =================
     public Account getAccount(String accountNumber) {
 
         return accountRepository.findByAccountNumber(accountNumber)
@@ -33,7 +32,6 @@ public class AccountService {
                         new ResourceNotFoundException("Account not found"));
     }
 
-    // ================= UPDATE BALANCE =================
     public void updateBalance(Account account, BigDecimal newBalance) {
 
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {

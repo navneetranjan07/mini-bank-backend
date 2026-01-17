@@ -1,10 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.TransactionResponseDTO;
-import com.example.demo.entity.Transaction;
 import com.example.demo.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

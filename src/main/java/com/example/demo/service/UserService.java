@@ -19,7 +19,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
-    private final PasswordEncoder passwordEncoder; // ✅ injected
+    private final PasswordEncoder passwordEncoder; //
 
     public UserService(UserRepository userRepository,
                        AccountRepository accountRepository,
@@ -29,7 +29,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ================= REGISTER USER =================
+
     public User register(String name, String email, String password) {
 
         if (userRepository.emailExists(email)) {
@@ -39,13 +39,13 @@ public class UserService {
         User user = User.builder()
                 .name(name)
                 .email(email)
-                .password(passwordEncoder.encode(password)) // ✅ correct
+                .password(passwordEncoder.encode(password))
                 .role(Role.ROLE_CUSTOMER)
                 .build();
 
         userRepository.save(user);
 
-        // Auto-create bank account
+
         Account account = Account.builder()
                 .accountNumber(generateAccountNumber())
                 .balance(BigDecimal.ZERO)
@@ -58,14 +58,14 @@ public class UserService {
         return user;
     }
 
-    // ================= LOGIN USER =================
+
     public User login(String email, String password) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Invalid email or password"));
 
-        // 🔥 THIS IS NOW CONSISTENT WITH ADMIN SEEDER
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ResourceNotFoundException("Invalid email or password");
         }
@@ -73,7 +73,7 @@ public class UserService {
         return user;
     }
 
-    // ================= UTILITY =================
+
     private String generateAccountNumber() {
         return UUID.randomUUID()
                 .toString()

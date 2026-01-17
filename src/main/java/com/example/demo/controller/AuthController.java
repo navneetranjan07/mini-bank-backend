@@ -21,7 +21,7 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
-    // ================= REGISTER =================
+
     @PostMapping("/register")
     public UserResponseDTO register(@RequestBody Map<String, String> req) {
 
@@ -39,7 +39,7 @@ public class AuthController {
                 .build();
     }
 
-    // ================= LOGIN =================
+
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody Map<String, String> req) {
 

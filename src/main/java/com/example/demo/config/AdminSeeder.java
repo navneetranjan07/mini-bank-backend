@@ -33,7 +33,7 @@ public class AdminSeeder implements CommandLineRunner {
 
             userRepository.save(admin);
 
-            System.out.println("✅ ADMIN USER CREATED");
+            System.out.println(" ADMIN USER CREATED");
         }
     }
 }

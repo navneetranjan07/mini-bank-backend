@@ -1,13 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.CreatePinRequest;
+import com.example.demo.dto.CreatePinWithPasswordRequest;
 import com.example.demo.entity.User;
+import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
 @RestController
@@ -24,29 +23,38 @@ public class UserController {
     }
 
     @PostMapping("/create-pin")
-    public String createPin(@RequestBody CreatePinRequest req,
+    public String createPin(@RequestBody CreatePinWithPasswordRequest req,
                             Authentication authentication) {
 
         if (!req.getPin().matches("\\d{4}")) {
-            return "PIN must be exactly 4 digits";
+            throw new BadRequestException("PIN must be exactly 4 digits");
         }
 
-        String email = authentication.getName(); // ✅ FIXED
-
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getTransactionPin() != null) {
-            return "PIN already set";
+            throw new BadRequestException("Transaction PIN already set");
         }
 
-        user.setTransactionPin(
-                passwordEncoder.encode(req.getPin())
-        );
 
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new BadRequestException("Invalid login password");
+        }
+
+        user.setTransactionPin(passwordEncoder.encode(req.getPin()));
         userRepository.save(user);
 
         return "Transaction PIN created successfully";
     }
+
+    @GetMapping("/pin-status")
+    public boolean isPinSet(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow();
+        return user.getTransactionPin() != null;
+    }
+
+
 
 }

@@ -17,11 +17,11 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    // ================= CUSTOMER: MY ACCOUNT =================
+
     @GetMapping("/me")
     public AccountResponseDTO getMyAccount(Authentication authentication) {
 
-        String email = authentication.getName(); // 🔐 JWT principal
+        String email = authentication.getName();
 
         Account account = accountService.getMyAccount(email);
 
@@ -31,7 +31,7 @@ public class AccountController {
                 .build();
     }
 
-    // ================= ADMIN / INTERNAL =================
+
     @GetMapping("/{accountNumber}")
     public AccountResponseDTO getAccount(@PathVariable String accountNumber) {
 

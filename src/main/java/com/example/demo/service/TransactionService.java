@@ -28,7 +28,7 @@ public class TransactionService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ================= DEPOSIT =================
+
     public void deposit(String accountNumber, BigDecimal amount) {
 
         validateAmount(amount);
@@ -48,7 +48,7 @@ public class TransactionService {
         transactionRepository.save(txn);
     }
 
-    // ================= WITHDRAW =================
+
     public void withdraw(String accountNumber,
                          BigDecimal amount,
                          String pin) {
@@ -78,13 +78,16 @@ public class TransactionService {
     }
 
 
-    // ================= TRANSFER =================
     public void transfer(String fromAccount,
                          String toAccount,
                          BigDecimal amount,
                          String pin) {
 
         validateAmount(amount);
+
+        if (fromAccount == null || toAccount == null) {
+            throw new BadRequestException("Account numbers cannot be null");
+        }
 
         Account sender = accountService.getAccount(fromAccount);
         Account receiver = accountService.getAccount(toAccount);
@@ -123,8 +126,6 @@ public class TransactionService {
     }
 
 
-
-    // ================= VALIDATION =================
     private void validateAmount(BigDecimal amount) {
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {

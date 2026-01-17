@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.TransactionPinRequest;
 import com.example.demo.dto.TransactionResponseDTO;
 import com.example.demo.entity.Account;
+import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.service.AccountService;
 import com.example.demo.service.TransactionService;
@@ -32,7 +33,7 @@ public class TransactionController {
         this.accountService = accountService;
     }
 
-    // ================= DEPOSIT =================
+
     @PostMapping("/deposit")
     public String deposit(@RequestBody Map<String, String> req) {
         transactionService.deposit(
@@ -42,32 +43,44 @@ public class TransactionController {
         return "Deposit successful";
     }
 
-    // ================= WITHDRAW =================
+
     @PostMapping("/withdraw")
     public String withdraw(@RequestBody TransactionPinRequest req) {
+
+        if (req.getAccountNumber() == null) {
+            throw new BadRequestException("Account number is required");
+        }
+
         transactionService.withdraw(
                 req.getAccountNumber(),
-                new BigDecimal(req.getAmount()),
+                req.getAmount(),
                 req.getPin()
         );
+
         return "Withdraw successful";
     }
 
 
-    // ================= TRANSFER =================
+
     @PostMapping("/transfer")
     public String transfer(@RequestBody TransactionPinRequest req) {
+
+        if (req.getAccountNumber() == null || req.getToAccount() == null) {
+            throw new BadRequestException("Both account numbers are required");
+        }
+
         transactionService.transfer(
                 req.getAccountNumber(),
                 req.getToAccount(),
-                new BigDecimal(req.getAmount()),
+                req.getAmount(),
                 req.getPin()
         );
+
         return "Transfer successful";
     }
 
 
-    // ================= USER TRANSACTION HISTORY =================
+
     @GetMapping("/my")
     public List<TransactionResponseDTO> myTransactions(Authentication auth) {
 

@@ -3,9 +3,6 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.AccountResponseDTO;
 import com.example.demo.dto.UserResponseDTO;
-import com.example.demo.entity.Account;
-import com.example.demo.entity.Transaction;
-import com.example.demo.entity.User;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.repository.UserRepository;
