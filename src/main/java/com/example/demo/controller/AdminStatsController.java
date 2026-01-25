@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -42,4 +45,15 @@ public class AdminStatsController {
                 last24hTxns
         );
     }
+
+    @GetMapping("/transactions/daily")
+    public Map<LocalDate, Long> dailyTransactions() {
+        return transactionRepository.findAll()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.getTransactionDate().toLocalDate(),
+                        Collectors.counting()
+                ));
+    }
+
 }

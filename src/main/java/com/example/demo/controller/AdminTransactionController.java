@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.TransactionResponseDTO;
+import com.example.demo.dto.UserTransactionDTO;
 import com.example.demo.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,5 +28,40 @@ public class AdminTransactionController {
                         .build())
                 .toList();
     }
+
+
+
+    @GetMapping("/transactions/user-wise")
+    public List<UserTransactionDTO> getUserWiseTransactions() {
+
+        return transactionRepository.findAll()
+                .stream()
+                .collect(Collectors.groupingBy(t -> t.getAccount().getUser()))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    var user = entry.getKey();
+                    var txns = entry.getValue();
+
+                    return UserTransactionDTO.builder()
+                            .userId(user.getId())
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .totalTransactions(txns.size())
+                            .transactions(
+                                    txns.stream()
+                                            .map(t -> TransactionResponseDTO.builder()
+                                                    .type(t.getType())
+                                                    .amount(t.getAmount())
+                                                    .transactionDate(t.getTransactionDate())
+                                                    .build())
+                                            .toList()
+                            )
+                            .build();
+                })
+                .toList();
+    }
+
+
 
 }

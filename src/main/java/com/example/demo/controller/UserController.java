@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ChangePinRequest;
 import com.example.demo.dto.CreatePinRequest;
 import com.example.demo.dto.CreatePinWithPasswordRequest;
 import com.example.demo.entity.User;
@@ -54,6 +55,33 @@ public class UserController {
                 .orElseThrow();
         return user.getTransactionPin() != null;
     }
+
+
+    @PostMapping("/change-pin")
+    public String changePin(@RequestBody ChangePinRequest req,
+                            Authentication auth) {
+
+        if (!req.getNewPin().matches("\\d{4}")) {
+            throw new BadRequestException("PIN must be exactly 4 digits");
+        }
+
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow();
+
+        if (user.getTransactionPin() == null) {
+            throw new BadRequestException("Transaction PIN not set");
+        }
+
+        if (!passwordEncoder.matches(req.getOldPin(), user.getTransactionPin())) {
+            throw new BadRequestException("Invalid old PIN");
+        }
+
+        user.setTransactionPin(passwordEncoder.encode(req.getNewPin()));
+        userRepository.save(user);
+
+        return "Transaction PIN changed successfully";
+    }
+
 
 
 
