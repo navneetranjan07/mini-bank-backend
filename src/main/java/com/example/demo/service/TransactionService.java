@@ -5,7 +5,8 @@ import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.TransactionRepository;
-import jakarta.transaction.Transactional;
+import com.example.demo.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,41 +14,53 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
-@Transactional
+@Transactional(noRollbackFor = BadRequestException.class)
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final PasswordEncoder passwordEncoder;
-
+    private final UserRepository userRepository;
 
     public TransactionService(TransactionRepository transactionRepository,
-                              AccountService accountService, PasswordEncoder passwordEncoder) {
+                              AccountService accountService,
+                              PasswordEncoder passwordEncoder,
+                              UserRepository userRepository) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
         this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
+    /* ======================= DEPOSIT ======================= */
 
     public void deposit(String accountNumber, BigDecimal amount) {
 
         validateAmount(amount);
 
         Account account = accountService.getAccount(accountNumber);
+        User user = account.getUser();
+
+        if (user.isLocked()) {
+            throw new BadRequestException(
+                    "User locked, please visit your branch"
+            );
+        }
 
         BigDecimal updatedBalance = account.getBalance().add(amount);
         accountService.updateBalance(account, updatedBalance);
 
-        Transaction txn = Transaction.builder()
-                .type("DEPOSIT")
-                .amount(amount)
-                .transactionDate(LocalDateTime.now())
-                .account(account)
-                .build();
-
-        transactionRepository.save(txn);
+        transactionRepository.save(
+                Transaction.builder()
+                        .type("DEPOSIT")
+                        .amount(amount)
+                        .transactionDate(LocalDateTime.now())
+                        .account(account)
+                        .build()
+        );
     }
 
+    /* ======================= WITHDRAW ======================= */
 
     public void withdraw(String accountNumber,
                          BigDecimal amount,
@@ -56,7 +69,7 @@ public class TransactionService {
         validateAmount(amount);
 
         Account account = accountService.getAccount(accountNumber);
-        validatePin(account, pin);
+        validatePinWithLock(account, pin);
 
         if (account.getBalance().compareTo(amount) < 0) {
             throw new BadRequestException("Insufficient balance");
@@ -77,6 +90,7 @@ public class TransactionService {
         );
     }
 
+    /* ======================= TRANSFER ======================= */
 
     public void transfer(String fromAccount,
                          String toAccount,
@@ -92,18 +106,19 @@ public class TransactionService {
         Account sender = accountService.getAccount(fromAccount);
         Account receiver = accountService.getAccount(toAccount);
 
-        validatePin(sender, pin);
-
+        validatePinWithLock(sender, pin);
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new BadRequestException("Insufficient balance");
         }
 
         accountService.updateBalance(
-                sender, sender.getBalance().subtract(amount)
+                sender,
+                sender.getBalance().subtract(amount)
         );
 
         accountService.updateBalance(
-                receiver, receiver.getBalance().add(amount)
+                receiver,
+                receiver.getBalance().add(amount)
         );
 
         transactionRepository.save(
@@ -125,22 +140,58 @@ public class TransactionService {
         );
     }
 
+    /* ======================= HELPERS ======================= */
 
     private void validateAmount(BigDecimal amount) {
-
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Amount must be greater than zero");
         }
     }
 
-    private void validatePin(Account account, String rawPin){
+    /**
+     * 🔐 REAL BANK LOGIC:
+     * - If user is locked → block immediately
+     * - Track failed PIN attempts
+     * - Lock user on 3rd failure
+     */
+    private void validatePinWithLock(Account account, String rawPin) {
+
         User user = account.getUser();
-        if(user.getTransactionPin() == null){
+
+        if (user.isLocked()) {
+            throw new BadRequestException(
+                    "User locked, please visit your branch"
+            );
+        }
+
+        if (user.getTransactionPin() == null) {
             throw new BadRequestException("Transaction PIN not set");
         }
 
-        if(!passwordEncoder.matches(rawPin, user.getTransactionPin())){
-            throw new BadRequestException("Invalid transaction PIN");
+        if (!passwordEncoder.matches(rawPin, user.getTransactionPin())) {
+
+            int attempts = user.getFailedPinAttempts() + 1;
+            user.setFailedPinAttempts(attempts);
+
+            if (attempts >= 3) {
+                user.setLocked(true);
+                user.setFailedPinAttempts(0);
+                userRepository.save(user);
+
+                throw new BadRequestException(
+                        "User locked, please visit your branch"
+                );
+            }
+
+            userRepository.save(user);
+
+            throw new BadRequestException(
+                    "Invalid transaction PIN. Attempts left: " + (3 - attempts)
+            );
         }
+
+       // Reset failed attempts on successful PIN entry
+        user.setFailedPinAttempts(0);
+        userRepository.save(user);
     }
 }

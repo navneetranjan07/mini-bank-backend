@@ -2,9 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.TransactionResponseDTO;
 import com.example.demo.dto.UserTransactionDTO;
+import com.example.demo.entity.User;
 import com.example.demo.repository.TransactionRepository;
+import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class AdminTransactionController {
 
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/transactions")
     public List<TransactionResponseDTO> getAllTransactions() {
@@ -60,6 +64,17 @@ public class AdminTransactionController {
                             .build();
                 })
                 .toList();
+    }
+
+    public String unlockUser(@PathVariable Long id){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setLocked(false);
+        user.setFailedPinAttempts(0);
+        user.setFailedPinAttempts(0);
+        userRepository.save(user);
+        return "User account unlocked successfully";
     }
 
 

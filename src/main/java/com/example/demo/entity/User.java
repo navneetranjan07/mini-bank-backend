@@ -43,5 +43,8 @@ public class User {
     private String transactionPin;
 
     @Column(nullable = false)
-    private boolean locked;
+    private boolean locked = false;
+
+    @Column(nullable = false)
+    private int failedPinAttempts = 0;
 }
