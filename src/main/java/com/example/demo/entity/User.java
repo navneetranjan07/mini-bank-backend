@@ -41,4 +41,7 @@ public class User {
     @Column(name = "transaction_pin")
     @JsonIgnore
     private String transactionPin;
+
+    @Column(nullable = false)
+    private boolean locked;
 }

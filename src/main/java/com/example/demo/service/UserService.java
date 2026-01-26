@@ -65,10 +65,16 @@ public class UserService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Invalid email or password"));
 
+        if (user.isLocked()) {
+            throw new RuntimeException("User account is locked. Please contact admin.");
+        }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ResourceNotFoundException("Invalid email or password");
         }
+
+
+
 
         return user;
     }
