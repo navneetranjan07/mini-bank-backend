@@ -21,15 +21,18 @@ public class TransactionService {
     private final AccountService accountService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
     public TransactionService(TransactionRepository transactionRepository,
                               AccountService accountService,
                               PasswordEncoder passwordEncoder,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              AuditService auditService) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
+        this.auditService = auditService;
     }
 
     /* ======================= DEPOSIT ======================= */

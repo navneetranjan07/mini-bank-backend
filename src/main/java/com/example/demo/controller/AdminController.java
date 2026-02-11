@@ -8,7 +8,11 @@ import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.AuditService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 
 import java.util.List;
 
@@ -20,13 +24,16 @@ public class AdminController {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final AuditService auditService;
 
     public AdminController(UserRepository userRepository,
                            AccountRepository accountRepository,
-                           TransactionRepository transactionRepository) {
+                           TransactionRepository transactionRepository,
+                           AuditService auditService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.auditService = auditService;
     }
 
     // GET ALL USERS
@@ -73,9 +80,26 @@ public class AdminController {
 
     @PutMapping("/user/{id}/unlock")
     public String unlockUser(@PathVariable Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         user.setLocked(false);
         userRepository.save(user);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String adminEmail = auth.getName();
+
+        auditService.log(
+                adminEmail,
+                "UNLOCK_USER",
+                user.getEmail(),
+                "SUCCESS",
+                null,
+                "Unlocked by admin"
+        );
+
         return "User unlocked successfully";
     }
+
+
+
 }
