@@ -6,6 +6,8 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +23,11 @@ public class AdminTransactionController {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(AdminTransactionController.class);
 
     @GetMapping("/transactions")
     public List<TransactionResponseDTO> getAllTransactions() {
+        LoggerFactory .getLogger(AdminTransactionController.class).info("Fetching all transactions for admin dashboard");
         return transactionRepository.findAll().stream()
                 .map(t -> TransactionResponseDTO.builder()
                         .type(t.getType())
@@ -37,6 +41,8 @@ public class AdminTransactionController {
 
     @GetMapping("/transactions/user-wise")
     public List<UserTransactionDTO> getUserWiseTransactions() {
+
+        LoggerFactory .getLogger(AdminTransactionController.class).info("Fetching user-wise transactions for admin dashboard");
 
         return transactionRepository.findAll()
                 .stream()
@@ -74,6 +80,8 @@ public class AdminTransactionController {
         user.setFailedPinAttempts(0);
         user.setFailedPinAttempts(0);
         userRepository.save(user);
+
+        LoggerFactory .getLogger(AdminTransactionController.class).info("Unlocked user with id: {}", id);
         return "User account unlocked successfully";
     }
 

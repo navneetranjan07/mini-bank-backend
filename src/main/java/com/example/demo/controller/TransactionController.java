@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -22,6 +23,7 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
+    private static final Logger  logger = Logger.getLogger(TransactionController.class.getName());
 
     public TransactionController(
             TransactionService transactionService,
@@ -40,6 +42,7 @@ public class TransactionController {
                 req.get("accountNumber"),
                 new BigDecimal(req.get("amount"))
         );
+        Logger.getLogger(TransactionController.class.getName()).info("Deposit of amount " + req.get("amount") + " to account " + req.get("accountNumber") + " successful");
         return "Deposit successful";
     }
 
@@ -56,6 +59,8 @@ public class TransactionController {
                 req.getAmount(),
                 req.getPin()
         );
+
+        Logger.getLogger(TransactionController.class.getName()).info("Withdrawal of amount " + req.getAmount() + " from account " + req.getAccountNumber() + " successful");
 
         return "Withdraw successful";
     }
@@ -75,7 +80,7 @@ public class TransactionController {
                 req.getAmount(),
                 req.getPin()
         );
-
+Logger.getLogger(TransactionController.class.getName()).info("Transfer of amount " + req.getAmount() + " from account " + req.getAccountNumber() + " to account " + req.getToAccount() + " successful");
         return "Transfer successful";
     }
 
@@ -86,6 +91,7 @@ public class TransactionController {
 
         String email = auth.getName();
         Account account = accountService.getMyAccount(email);
+        Logger.getLogger(TransactionController.class.getName()).info("Fetching transactions for user: " + email);
 
         return transactionRepository.findByAccountId(account.getId())
                 .stream()

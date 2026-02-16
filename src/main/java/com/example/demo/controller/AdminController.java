@@ -9,6 +9,8 @@ import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,7 @@ public class AdminController {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final AuditService auditService;
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     public AdminController(UserRepository userRepository,
                            AccountRepository accountRepository,
@@ -39,6 +42,7 @@ public class AdminController {
     // GET ALL USERS
     @GetMapping("/users")
     public List<UserResponseDTO> getAllUsers() {
+        LoggerFactory.getLogger(AdminController.class).info("Fetching all users for admin dashboard");
         return userRepository.findAll().stream()
                 .map(u -> UserResponseDTO.builder()
                         .id(u.getId())
@@ -54,6 +58,7 @@ public class AdminController {
     // GET ALL ACCOUNTS
     @GetMapping("/accounts")
     public List<AccountResponseDTO> getAllAccounts() {
+        LoggerFactory.getLogger(AdminController.class).info("Fetching all accounts for admin dashboard");
         return accountRepository.findAll().stream()
                 .map(a -> AccountResponseDTO.builder()
                         .accountNumber(a.getAccountNumber())
@@ -67,6 +72,7 @@ public class AdminController {
     @DeleteMapping("/user/{id}")
     public String deleteUser(@PathVariable Long id) {
         userRepository.deleteById(id);
+        LoggerFactory.getLogger(AdminController.class).info("Deleted user with id: {}", id);
         return "User deleted successfully";
     }
 
@@ -75,6 +81,7 @@ public class AdminController {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setLocked(true);
         userRepository.save(user);
+        LoggerFactory.getLogger(AdminController.class).info("Locked user with id: {}", id);
         return "User locked successfully";
     }
 
@@ -87,7 +94,6 @@ public class AdminController {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String adminEmail = auth.getName();
-
         auditService.log(
                 adminEmail,
                 "UNLOCK_USER",
@@ -96,10 +102,9 @@ public class AdminController {
                 null,
                 "Unlocked by admin"
         );
+        LoggerFactory.getLogger(AdminController.class).info("Unlocked user with id: {}", id);
 
         return "User unlocked successfully";
     }
-
-
 
 }
